@@ -9,7 +9,24 @@ services:
     networks:
       - automatiza-network
     restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      - db
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - automatiza-network
 
 networks:
   automatiza-network:
     external: true
+
+volumes:
+  postgres_data:
