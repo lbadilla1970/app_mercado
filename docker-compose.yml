@@ -1,0 +1,15 @@
+services:
+  app_mercado:
+    build: .
+    container_name: app_mercado
+    ports:
+      - "8541:8501"
+    volumes:
+      - .:/app
+    networks:
+      - automatiza-network
+    restart: unless-stopped
+
+networks:
+  automatiza-network:
+    external: true
