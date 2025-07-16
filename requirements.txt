@@ -4,3 +4,7 @@ numpy
 matplotlib
 plotly
 altair
+sqlalchemy
+psycopg2-binary
+passlib
+python-dotenv
