@@ -101,12 +101,12 @@ def login_page(db):
         if user:
             st.session_state.user_id = user.id
             st.session_state.page = 'app'
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.error('Credenciales inválidas')
     if st.button('¿Olvidó su contraseña?'):
         st.session_state.page = 'forgot'
-        st.experimental_rerun()
+        st.rerun()
 
 def forgot_page(db):
     st.title('Recuperar Contraseña')
@@ -121,7 +121,7 @@ def forgot_page(db):
         st.success('Si el correo existe se enviará un token.')
     if st.button('Volver'):
         st.session_state.page = 'login'
-        st.experimental_rerun()
+        st.rerun()
 
 def reset_page(db):
     st.title('Restablecer Contraseña')
@@ -139,18 +139,18 @@ def reset_page(db):
             st.error('Token inválido')
     if st.button('Volver'):
         st.session_state.page = 'login'
-        st.experimental_rerun()
+        st.rerun()
 
 def main_app(db):
     user = db.get(User, st.session_state.user_id)
     if not user:
         st.session_state.page = 'login'
-        st.experimental_rerun()
+        st.rerun()
     st.sidebar.write(f'Conectado como: {user.email}')
     if st.sidebar.button('Cerrar sesión'):
         st.session_state.user_id = None
         st.session_state.page = 'login'
-        st.experimental_rerun()
+        st.rerun()
 
     if user.role and user.role.name == 'Administrador':
         show_panel = st.sidebar.checkbox('Panel Administrador')
