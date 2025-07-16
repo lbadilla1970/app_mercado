@@ -6,7 +6,7 @@ from utils.charts import kpi_card
 from database import SessionLocal
 from init_db import init_db
 import auth
-from models import User, Role, Company, Data
+from models import User, Role, Company, Data, LicitacionEmpresa
 
 st.set_page_config(layout="wide")
 init_db()
@@ -22,6 +22,19 @@ def load_data(db, company_id):
             'Valor': r.value,
             'Fecha': r.date,
             'Grupo': r.group
+        } for r in rows
+    ])
+
+def load_licitaciones(db, empresa):
+    rows = db.query(LicitacionEmpresa).filter_by(empresa=empresa).all()
+    return pd.DataFrame([
+        {
+            'Numero': r.numero_adquisicion,
+            'Tipo': r.tipo_adquisicion,
+            'Nombre': r.nombre_adquisicion,
+            'Organismo': r.organismo,
+            'Fecha Publicacion': r.fecha_publicacion,
+            'Fecha Cierre': r.fecha_cierre,
         } for r in rows
     ])
 
@@ -65,6 +78,12 @@ def admin_panel(db):
             db.add(Role(name=new_role))
             db.commit()
             st.success('Rol agregado')
+
+    st.subheader('Licitaciones')
+    if st.button('Actualizar desde Excel'):
+        from utils.licitaciones import sync_from_excel
+        sync_from_excel(db)
+        st.success('Datos actualizados')
 
 if 'user_id' not in st.session_state:
     st.session_state.user_id = None
@@ -143,7 +162,7 @@ def main_app(db):
         return
 
     pagina = st.sidebar.selectbox('Seleccione una vista', [
-        'Resumen General', 'Análisis por Grupo', 'Mapa'
+        'Resumen General', 'Análisis por Grupo', 'Mapa', 'Licitaciones'
     ])
     df = load_data(db, user.company_id)
 
@@ -161,6 +180,13 @@ def main_app(db):
         grupo.mostrar(df)
     elif pagina == 'Mapa':
         mapa.mostrar(df)
+    elif pagina == 'Licitaciones':
+        ldf = load_licitaciones(db, user.company.name)
+        tipos = ['Todos'] + sorted(ldf['Tipo'].unique())
+        tsel = st.selectbox('Tipo de licitacion', tipos)
+        if tsel != 'Todos':
+            ldf = ldf[ldf['Tipo'] == tsel]
+        st.dataframe(ldf)
 
 page_func = {
     'login': login_page,
