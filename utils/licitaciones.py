@@ -25,8 +25,8 @@ COLUMN_MAP = {
 
 def _read_excel(path='datos/licitaciones.xlsx'):
     df = pd.read_excel(path, header=HEADER_ROW)
-    # Normalize column names by stripping spaces
-    df.columns = [c.strip() if isinstance(c, str) else c for c in df.columns]
+    # Normalize column names and ensure they are strings
+    df.columns = [str(c).strip() for c in df.columns]
     # Some spreadsheets might store the first column with a slightly different
     # name. Fallback to using the first column when the expected label is
     # missing.
