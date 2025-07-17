@@ -4,6 +4,7 @@ import pandas as pd
 from datetime import datetime
 from sqlalchemy.orm import Session
 from models import Base, Role, Company, User, Data
+from utils.licitaciones import initial_load
 from passlib.hash import bcrypt
 from database import engine, SessionLocal
 
@@ -18,13 +19,19 @@ def init_db():
                 db.add(Role(name=rname))
         db.commit()
 
-        # Empresa Ecoscom
+        # Empresas base
         ecoscom = db.query(Company).filter_by(name='Ecoscom').first()
         if not ecoscom:
             ecoscom = Company(name='Ecoscom')
             db.add(ecoscom)
             db.commit()
             db.refresh(ecoscom)
+
+        indoor = db.query(Company).filter_by(name='Indoor').first()
+        if not indoor:
+            indoor = Company(name='Indoor')
+            db.add(indoor)
+            db.commit()
 
         # Datos de ejemplo
         if not db.query(Data).first():
@@ -53,5 +60,8 @@ def init_db():
                              company_id=ecoscom.id, role_id=admin_role.id)
                 db.add(admin)
                 db.commit()
+
+        # Carga inicial de licitaciones
+        initial_load(db)
     finally:
         db.close()
