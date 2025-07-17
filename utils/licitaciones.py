@@ -75,6 +75,10 @@ def _read_excel(path='datos/licitaciones.xlsx'):
     # Drop any columns not used by the model to avoid unexpected keyword
     # arguments when creating ``Licitacion`` objects.
     df = df.reindex(columns=LICITACION_FIELDS, fill_value='')
+    # Remove duplicates based on the acquisition number to avoid integrity
+    # errors when inserting into the database.  ``keep='first'`` retains the
+    # first occurrence and drops the rest.
+    df = df.drop_duplicates(subset=['numero_adquisicion'], keep='first')
     return df
 
 
