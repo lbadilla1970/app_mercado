@@ -25,6 +25,13 @@ COLUMN_MAP = {
 
 def _read_excel(path='datos/licitaciones.xlsx'):
     df = pd.read_excel(path, header=HEADER_ROW)
+    # Normalize column names by stripping spaces
+    df.columns = [c.strip() if isinstance(c, str) else c for c in df.columns]
+    # Some spreadsheets might store the first column with a slightly different
+    # name. Fallback to using the first column when the expected label is
+    # missing.
+    if 'Numero Adquisición' not in df.columns and len(df.columns) > 0:
+        df = df.rename(columns={df.columns[0]: 'Numero Adquisición'})
     df = df.dropna(subset=['Numero Adquisición'])
     df = df.fillna('')
     df = df.rename(columns=COLUMN_MAP)
