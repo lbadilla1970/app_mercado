@@ -37,11 +37,13 @@ def _read_excel(path='datos/licitaciones.xlsx'):
     df = df.rename(columns=COLUMN_MAP)
     if 'Unnamed: 2' in df.columns:
         df = df.rename(columns={'Unnamed: 2': 'col3'})
-    else:
-        df['col3'] = ''
     if 'Unnamed: 7' in df.columns:
         df = df.rename(columns={'Unnamed: 7': 'col8'})
-    else:
+    # Remove any other leftover Excel index columns like 'Unnamed: 1'
+    df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+    if 'col3' not in df.columns:
+        df['col3'] = ''
+    if 'col8' not in df.columns:
         df['col8'] = ''
     for col in COLUMN_MAP.values():
         if col not in df.columns:
