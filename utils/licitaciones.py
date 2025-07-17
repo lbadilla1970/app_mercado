@@ -75,6 +75,9 @@ def _read_excel(path='datos/licitaciones.xlsx'):
     # Drop any columns not used by the model to avoid unexpected keyword
     # arguments when creating ``Licitacion`` objects.
     df = df.reindex(columns=LICITACION_FIELDS, fill_value='')
+    # Ensure all values are stored as strings so they can be inserted
+    # consistently into the database and later rendered by Streamlit
+    df = df.astype(str)
     # Remove duplicates based on the acquisition number to avoid integrity
     # errors when inserting into the database.  ``keep='first'`` retains the
     # first occurrence and drops the rest.
