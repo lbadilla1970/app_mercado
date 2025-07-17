@@ -3,6 +3,30 @@ from models import Licitacion, LicitacionEmpresa, Company
 
 HEADER_ROW = 7
 
+# Column names in the final dataframe that map directly to the fields of the
+# ``Licitacion`` model.  These are derived from ``COLUMN_MAP`` plus the extra
+# columns ``col3`` and ``col8`` that appear in the spreadsheet.
+LICITACION_FIELDS = [
+    'numero_adquisicion',
+    'tipo_adquisicion',
+    'col3',
+    'nombre_adquisicion',
+    'descripcion',
+    'organismo',
+    'region_compradora',
+    'col8',
+    'fecha_publicacion',
+    'fecha_cierre',
+    'descripcion_producto',
+    'codigo_onu',
+    'unidad_medida',
+    'cantidad',
+    'generico',
+    'nivel1',
+    'nivel2',
+    'nivel3',
+]
+
 COLUMN_MAP = {
     'Numero Adquisición': 'numero_adquisicion',
     'Tipo Adquisición': 'tipo_adquisicion',
@@ -48,6 +72,9 @@ def _read_excel(path='datos/licitaciones.xlsx'):
     for col in COLUMN_MAP.values():
         if col not in df.columns:
             df[col] = ''
+    # Drop any columns not used by the model to avoid unexpected keyword
+    # arguments when creating ``Licitacion`` objects.
+    df = df.reindex(columns=LICITACION_FIELDS, fill_value='')
     return df
 
 
@@ -58,12 +85,15 @@ def initial_load(db):
     first = df.iloc[:50]
     second = df.iloc[50:100]
     for _, row in pd.concat([first, second]).iterrows():
-        db.add(Licitacion(**row.to_dict()))
+        data = {k: row[k] for k in LICITACION_FIELDS}
+        db.add(Licitacion(**data))
     db.commit()
     for _, row in first.iterrows():
-        db.add(LicitacionEmpresa(empresa='Ecoscom', **row.to_dict()))
+        data = {k: row[k] for k in LICITACION_FIELDS}
+        db.add(LicitacionEmpresa(empresa='Ecoscom', **data))
     for _, row in second.iterrows():
-        db.add(LicitacionEmpresa(empresa='Indoor', **row.to_dict()))
+        data = {k: row[k] for k in LICITACION_FIELDS}
+        db.add(LicitacionEmpresa(empresa='Indoor', **data))
     db.commit()
 
 
@@ -75,7 +105,7 @@ def sync_from_excel(db):
             db.delete(rec)
     db.commit()
     for _, row in df.iterrows():
-        data = row.to_dict()
+        data = {k: row[k] for k in LICITACION_FIELDS}
         lic = db.query(Licitacion).filter_by(numero_adquisicion=data['numero_adquisicion']).first()
         if not lic:
             db.add(Licitacion(**data))
@@ -90,7 +120,7 @@ def sync_from_excel(db):
                 db.delete(rec)
         db.commit()
         for _, row in df.iterrows():
-            data = row.to_dict()
+            data = {k: row[k] for k in LICITACION_FIELDS}
             lic = db.query(LicitacionEmpresa).filter_by(empresa=empresa,
                                                        numero_adquisicion=data['numero_adquisicion']).first()
             if not lic:
