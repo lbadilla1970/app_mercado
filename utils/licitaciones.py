@@ -48,7 +48,7 @@ COLUMN_MAP = {
 
 
 def _read_excel(path='datos/licitaciones.xlsx'):
-    df = pd.read_excel(path, header=HEADER_ROW)
+    df = pd.read_excel(path, header=HEADER_ROW, engine='openpyxl', dtype=str)
     # Normalize column names and ensure they are strings
     df.columns = [str(c).strip() for c in df.columns]
     # Some spreadsheets might store the first column with a slightly different
