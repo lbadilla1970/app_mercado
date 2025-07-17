@@ -6,7 +6,7 @@ from utils.charts import kpi_card
 from database import SessionLocal
 from init_db import init_db
 import auth
-from models import User, Role, Company, Data
+from models import User, Role, Company, Data, LicitacionEmpresa
 
 st.set_page_config(layout="wide")
 init_db()
@@ -22,6 +22,19 @@ def load_data(db, company_id):
             'Valor': r.value,
             'Fecha': r.date,
             'Grupo': r.group
+        } for r in rows
+    ])
+
+def load_licitaciones(db, empresa):
+    rows = db.query(LicitacionEmpresa).filter_by(empresa=empresa).all()
+    return pd.DataFrame([
+        {
+            'Numero': r.numero_adquisicion,
+            'Tipo': r.tipo_adquisicion,
+            'Nombre': r.nombre_adquisicion,
+            'Organismo': r.organismo,
+            'Fecha Publicacion': r.fecha_publicacion,
+            'Fecha Cierre': r.fecha_cierre,
         } for r in rows
     ])
 
@@ -66,6 +79,12 @@ def admin_panel(db):
             db.commit()
             st.success('Rol agregado')
 
+    st.subheader('Licitaciones')
+    if st.button('Actualizar desde Excel'):
+        from utils.licitaciones import sync_from_excel
+        sync_from_excel(db)
+        st.success('Datos actualizados')
+
 if 'user_id' not in st.session_state:
     st.session_state.user_id = None
 if 'page' not in st.session_state:
@@ -82,12 +101,12 @@ def login_page(db):
         if user:
             st.session_state.user_id = user.id
             st.session_state.page = 'app'
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.error('Credenciales inválidas')
     if st.button('¿Olvidó su contraseña?'):
         st.session_state.page = 'forgot'
-        st.experimental_rerun()
+        st.rerun()
 
 def forgot_page(db):
     st.title('Recuperar Contraseña')
@@ -102,7 +121,7 @@ def forgot_page(db):
         st.success('Si el correo existe se enviará un token.')
     if st.button('Volver'):
         st.session_state.page = 'login'
-        st.experimental_rerun()
+        st.rerun()
 
 def reset_page(db):
     st.title('Restablecer Contraseña')
@@ -120,18 +139,18 @@ def reset_page(db):
             st.error('Token inválido')
     if st.button('Volver'):
         st.session_state.page = 'login'
-        st.experimental_rerun()
+        st.rerun()
 
 def main_app(db):
     user = db.get(User, st.session_state.user_id)
     if not user:
         st.session_state.page = 'login'
-        st.experimental_rerun()
+        st.rerun()
     st.sidebar.write(f'Conectado como: {user.email}')
     if st.sidebar.button('Cerrar sesión'):
         st.session_state.user_id = None
         st.session_state.page = 'login'
-        st.experimental_rerun()
+        st.rerun()
 
     if user.role and user.role.name == 'Administrador':
         show_panel = st.sidebar.checkbox('Panel Administrador')
@@ -143,7 +162,7 @@ def main_app(db):
         return
 
     pagina = st.sidebar.selectbox('Seleccione una vista', [
-        'Resumen General', 'Análisis por Grupo', 'Mapa'
+        'Resumen General', 'Análisis por Grupo', 'Mapa', 'Licitaciones'
     ])
     df = load_data(db, user.company_id)
 
@@ -161,6 +180,13 @@ def main_app(db):
         grupo.mostrar(df)
     elif pagina == 'Mapa':
         mapa.mostrar(df)
+    elif pagina == 'Licitaciones':
+        ldf = load_licitaciones(db, user.company.name)
+        tipos = ['Todos'] + sorted(ldf['Tipo'].unique())
+        tsel = st.selectbox('Tipo de licitacion', tipos)
+        if tsel != 'Todos':
+            ldf = ldf[ldf['Tipo'] == tsel]
+        st.dataframe(ldf)
 
 page_func = {
     'login': login_page,
